@@ -20,10 +20,12 @@ pub fn render_distance_update_system(
     }
 
     if is_action_just_pressed(GameAction::RenderDistanceMinus, &keyboard_input, &key_map) {
-        render_distance.distance -= 1;
+        render_distance.distance = 1.max(render_distance.distance - 1);
+        info!("Reducing render distance to {}", render_distance.distance);
     }
 
     if is_action_just_pressed(GameAction::RenderDistancePlus, &keyboard_input, &key_map) {
         render_distance.distance += 1;
+        info!("Increasing render distance to {}", render_distance.distance);
     }
 }
