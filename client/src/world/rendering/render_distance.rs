@@ -6,7 +6,7 @@ use crate::{
     KeyMap,
 };
 use bevy::prelude::*;
-use shared::players::Player;
+use shared::CHUNK_SIZE;
 
 #[derive(Resource, Default, Reflect)]
 pub struct RenderDistance {
@@ -14,7 +14,7 @@ pub struct RenderDistance {
 }
 
 pub fn render_distance_update_system(
-    query: Query<&Player, With<CurrentPlayerMarker>>,
+    player_transform: Query<&Transform, With<CurrentPlayerMarker>>,
     mut ev_writer: EventWriter<WorldRenderRequestUpdateEvent>,
     mut render_distance: ResMut<RenderDistance>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
@@ -35,11 +35,15 @@ pub fn render_distance_update_system(
         render_distance.distance += 1;
         let new_distance = render_distance.distance as f32;
         info!("Increasing render distance to {}", render_distance.distance);
-        let mut query = query;
-        if let Ok(player) = query.single_mut() {
-            ask_for_chunks(ev_writer, player.position, old_distance, new_distance);
+        if let Ok(player_transform) = player_transform.single() {
+            ask_for_chunks(
+                ev_writer,
+                player_transform.translation,
+                old_distance,
+                new_distance,
+            );
         } else {
-            debug!("Player not found");
+            debug!("Player position not found");
         }
     }
 }

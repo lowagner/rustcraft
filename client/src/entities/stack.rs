@@ -24,7 +24,7 @@ pub fn stack_update_system(
     time: Res<Time>,
     material_resource: Res<MaterialResource>,
     distance: Res<RenderDistance>,
-    player_pos: Query<&Transform, With<CurrentPlayerMarker>>,
+    player_transform: Query<&Transform, With<CurrentPlayerMarker>>,
 ) {
     'ev_loop: for ev in events.read() {
         if let Some((stack, pos)) = ev.data {
@@ -86,12 +86,10 @@ pub fn stack_update_system(
         }
     }
 
+    let player_position = player_transform.single().unwrap().translation;
+
     for (e, _, mut transform) in stacks.iter_mut() {
-        if player_pos
-            .single()
-            .unwrap()
-            .translation
-            .distance(transform.translation)
+        if player_position.distance(transform.translation)
             > distance.distance as f32 * CHUNK_SIZE as f32
         {
             commands.entity(e).despawn();
