@@ -22,7 +22,7 @@ pub fn simulate_player_movement(
         return;
     }
 
-    let delta = action.delta_ms as f32 / 1000.0;
+    let delta_t = action.delta_ms as f32 / 1000.0;
 
     if action.is_pressed(NetworkAction::ToggleFlyMode) {
         player.is_flying = !player.is_flying;
@@ -34,9 +34,9 @@ pub fn simulate_player_movement(
     let is_jumping = action.is_pressed(NetworkAction::JumpOrFlyUp);
 
     if player.is_flying {
-        fly(player, direction, delta);
+        fly(player, direction, delta_t);
     } else {
-        fly_not(player, is_jumping, direction, delta, world_map);
+        fly_not(player, is_jumping, direction, delta_t, world_map);
     }
 
     // If the player is below the world, reset their position
@@ -94,8 +94,8 @@ fn get_desired_direction(player: &mut Player, action: &PlayerFrameInput) -> Vec3
     direction
 }
 
-fn fly(player: &mut Player, direction: Vec3, delta: f32) {
-    player.position += direction * (SPEED * FLY_SPEED_MULTIPLIER * delta);
+fn fly(player: &mut Player, direction: Vec3, delta_t: f32) {
+    player.position += direction * (SPEED * FLY_SPEED_MULTIPLIER * delta_t);
     player.velocity.y = 0.0;
     player.on_ground = false;
 }
@@ -104,21 +104,21 @@ fn fly_not(
     player: &mut Player,
     is_jumping: bool,
     direction: Vec3,
-    delta: f32,
+    delta_t: f32,
     world_map: &impl WorldMap,
 ) {
-    let displacement = SPEED * delta;
+    let delta_xz = SPEED * delta_t;
 
-    // Attempt to move the player by the calculated direction
-    let new_x = player.position.x + direction.x * displacement;
-    let new_z = player.position.z + direction.z * displacement;
+    // Attempt to move the player in the desired direction horizontally
+    let new_x = player.position.x + direction.x * delta_xz;
+    let new_z = player.position.z + direction.z * delta_xz;
 
     player.velocity.y = player
         .velocity
         .y
         .max(-MAX_VERTICAL_SPEED)
         .min(MAX_VERTICAL_SPEED);
-    let new_y = player.position.y + player.velocity.y * delta;
+    let new_y = player.position.y + player.velocity.y * delta_t;
 
     let new_vec_x = &player.position.with_x(new_x);
     let new_vec_y = &player.position.with_y(new_y);
@@ -149,7 +149,7 @@ fn fly_not(
         player.on_ground = false;
     } else if !player.on_ground {
         // Apply gravity when the player is in the air
-        player.velocity.y += GRAVITY * delta;
+        player.velocity.y += GRAVITY * delta_t;
     }
 }
 
