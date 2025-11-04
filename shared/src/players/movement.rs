@@ -2,7 +2,7 @@ use crate::{
     messages::{NetworkAction, PlayerFrameInput},
     players::{
         collision::check_player_collision,
-        constants::{FLY_SPEED_MULTIPLIER, GRAVITY, JUMP_VELOCITY, MAX_UPWARD_SPEED, SPEED},
+        constants::{FLY_SPEED_MULTIPLIER, GRAVITY, JUMP_VELOCITY, MAX_VERTICAL_SPEED, SPEED},
     },
     world::WorldMap,
 };
@@ -24,17 +24,33 @@ pub fn simulate_player_movement(
 
     let delta = action.delta_ms as f32 / 1000.0;
 
-    let mut direction = Vec3::ZERO;
-
     if action.is_pressed(NetworkAction::ToggleFlyMode) {
         player.is_flying = !player.is_flying;
     }
 
     player.camera_transform = action.camera;
 
+    let direction = get_desired_direction(player, action);
     let is_jumping = action.is_pressed(NetworkAction::JumpOrFlyUp);
 
-    // Calculate movement directions relative to the camera
+    if player.is_flying {
+        fly(player, direction, delta);
+    } else {
+        fly_not(player, is_jumping, direction, delta, world_map);
+    }
+
+    // If the player is below the world, reset their position
+    const FALL_LIMIT: f32 = -50.0;
+    if player.position.y < FALL_LIMIT {
+        player.position = Vec3::new(0.0, 100.0, 0.0);
+        player.velocity.y = 0.0;
+    }
+}
+
+fn get_desired_direction(player: &mut Player, action: &PlayerFrameInput) -> Vec3 {
+    let mut direction = Vec3::ZERO;
+
+    // Calculate movement directions relative to the camera, in the horizontal plane
     let forward = player
         .camera_transform
         .forward()
@@ -75,72 +91,65 @@ pub fn simulate_player_movement(
         direction -= Vec3::Y;
     }
 
-    // Handle jumping (if on the ground) and gravity, only if not flying
-    if !player.is_flying {
-        if player.on_ground && is_jumping {
-            // Player can jump only when grounded
-            player.velocity.y = JUMP_VELOCITY;
-            player.on_ground = false;
-        } else if !player.on_ground {
-            // Apply gravity when the player is in the air
-            player.velocity.y += GRAVITY * delta;
-        }
-    }
+    direction
+}
 
-    if player.velocity.y > MAX_UPWARD_SPEED {
-        player.velocity.y = MAX_UPWARD_SPEED;
-    }
+fn fly(player: &mut Player, direction: Vec3, delta: f32) {
+    player.position += direction * (SPEED * FLY_SPEED_MULTIPLIER * delta);
+    player.velocity.y = 0.0;
+    player.on_ground = false;
+}
 
-    let new_y = player.position.y + player.velocity.y * delta;
-    let new_vec = &Vec3::new(player.position.x, new_y, player.position.z);
-
-    if !player.is_flying {
-        if check_player_collision(new_vec, player, world_map) {
-            player.on_ground = true;
-            player.velocity.y = 0.0;
-        } else {
-            player.position.y = new_y;
-            player.on_ground = false;
-        }
-    } else {
-        player.velocity.y = 0.0;
-        player.position.y = new_y;
-        player.on_ground = false;
-    }
-
-    let displacement = if player.is_flying {
-        SPEED * FLY_SPEED_MULTIPLIER
-    } else {
-        SPEED
-    } * delta;
+fn fly_not(
+    player: &mut Player,
+    is_jumping: bool,
+    direction: Vec3,
+    delta: f32,
+    world_map: &impl WorldMap,
+) {
+    let displacement = SPEED * delta;
 
     // Attempt to move the player by the calculated direction
     let new_x = player.position.x + direction.x * displacement;
     let new_z = player.position.z + direction.z * displacement;
 
+    player.velocity.y = player
+        .velocity
+        .y
+        .max(-MAX_VERTICAL_SPEED)
+        .min(MAX_VERTICAL_SPEED);
+    let new_y = player.position.y + player.velocity.y * delta;
+
     let new_vec_x = &player.position.with_x(new_x);
+    let new_vec_y = &player.position.with_y(new_y);
     let new_vec_z = &player.position.with_z(new_z);
 
     // If a block is detected in the new position, don't move the player on this axis
-    if check_player_collision(new_vec_x, player, world_map) && !player.is_flying {
-    } else {
+    if !check_player_collision(new_vec_x, player, world_map) {
         player.position.x = new_x;
     }
 
-    if check_player_collision(new_vec_z, player, world_map) && !player.is_flying {
+    if check_player_collision(new_vec_y, player, world_map) {
+        player.on_ground = true;
+        player.velocity.y = 0.0;
     } else {
+        player.position.y = new_y;
+        player.on_ground = false;
+    }
+
+    if !check_player_collision(new_vec_z, player, world_map) {
         player.position.z = new_z;
     }
 
-    if player.is_flying {
-        player.position.y += direction.y * displacement;
-    }
-
-    // If the player is below the world, reset their position
-    const FALL_LIMIT: f32 = -50.0;
-    if player.position.y < FALL_LIMIT {
-        player.position = Vec3::new(0.0, 100.0, 0.0);
-        player.velocity.y = 0.0;
+    // TODO: short-hops
+    // Handle jumping (if on the ground) and gravity, only if not flying
+    if player.on_ground && is_jumping {
+        // Player can jump only when grounded
+        player.velocity.y = JUMP_VELOCITY;
+        player.on_ground = false;
+    } else if !player.on_ground {
+        // Apply gravity when the player is in the air
+        player.velocity.y += GRAVITY * delta;
     }
 }
 
