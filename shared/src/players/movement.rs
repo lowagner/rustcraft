@@ -2,7 +2,7 @@ use crate::{
     messages::{NetworkAction, PlayerFrameInput},
     players::{
         collision::check_player_collision,
-        constants::{FLY_SPEED_MULTIPLIER, GRAVITY, JUMP_VELOCITY, SPEED},
+        constants::{FLY_SPEED_MULTIPLIER, GRAVITY, JUMP_VELOCITY, MAX_UPWARD_SPEED, SPEED},
     },
     world::WorldMap,
 };
@@ -79,7 +79,7 @@ pub fn simulate_player_movement(
     if !player.is_flying {
         if player.on_ground && is_jumping {
             // Player can jump only when grounded
-            player.velocity.y = JUMP_VELOCITY * delta;
+            player.velocity.y = JUMP_VELOCITY;
             player.on_ground = false;
         } else if !player.on_ground {
             // Apply gravity when the player is in the air
@@ -87,13 +87,11 @@ pub fn simulate_player_movement(
         }
     }
 
-    let max_velocity = 0.9;
-
-    if player.velocity.y > max_velocity {
-        player.velocity.y = max_velocity;
+    if player.velocity.y > MAX_UPWARD_SPEED {
+        player.velocity.y = MAX_UPWARD_SPEED;
     }
 
-    let new_y = player.position.y + player.velocity.y;
+    let new_y = player.position.y + player.velocity.y * delta;
     let new_vec = &Vec3::new(player.position.x, new_y, player.position.z);
 
     if !player.is_flying {
@@ -110,16 +108,15 @@ pub fn simulate_player_movement(
         player.on_ground = false;
     }
 
-    let speed = if player.is_flying {
+    let displacement = if player.is_flying {
         SPEED * FLY_SPEED_MULTIPLIER
     } else {
         SPEED
-    };
-    let speed = speed * delta;
+    } * delta;
 
     // Attempt to move the player by the calculated direction
-    let new_x = player.position.x + direction.x * speed;
-    let new_z = player.position.z + direction.z * speed;
+    let new_x = player.position.x + direction.x * displacement;
+    let new_z = player.position.z + direction.z * displacement;
 
     let new_vec_x = &player.position.with_x(new_x);
     let new_vec_z = &player.position.with_z(new_z);
@@ -136,7 +133,7 @@ pub fn simulate_player_movement(
     }
 
     if player.is_flying {
-        player.position.y += direction.y * speed;
+        player.position.y += direction.y * displacement;
     }
 
     // If the player is below the world, reset their position
