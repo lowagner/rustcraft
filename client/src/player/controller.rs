@@ -65,14 +65,14 @@ pub fn player_movement_system(
         return;
     }
 
-    let res = player_query.single_mut();
+    let player_res = player_query.single_mut();
     // Return early if the player has not been spawned yet
-    if res.is_err() {
-        debug!("player not found");
+    if player_res.is_err() {
+        debug!("Player not found");
         return;
     }
 
-    let (mut player, mut player_transform) = player_query.single_mut().unwrap();
+    let (mut player, mut player_transform) = player_res.unwrap();
 
     if *ui_mode == UIMode::Closed
         && is_action_just_pressed(GameAction::ToggleFlyMode, &keyboard_input, &key_map)
