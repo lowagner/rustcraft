@@ -6,6 +6,7 @@ use crate::{
     KeyMap,
 };
 use bevy::prelude::*;
+use shared::world::{chunk_center_to_global_pos, world_position_to_chunk_position};
 use shared::CHUNK_SIZE;
 
 #[derive(Resource, Default, Reflect)]
@@ -31,9 +32,9 @@ pub fn render_distance_update_system(
     }
 
     if is_action_just_pressed(GameAction::RenderDistancePlus, &keyboard_input, &key_map) {
-        let old_distance = render_distance.distance as f32;
+        let old_distance = render_distance.distance as f32 * CHUNK_SIZE as f32;
         render_distance.distance += 1;
-        let new_distance = render_distance.distance as f32;
+        let new_distance = render_distance.distance as f32 * CHUNK_SIZE as f32;
         info!("Increasing render distance to {}", render_distance.distance);
         if let Ok(player_transform) = player_transform.single() {
             ask_for_chunks(
@@ -55,6 +56,7 @@ fn ask_for_chunks(
     new_distance: f32,
 ) {
     info!("Adding chunks around player position {}", player_position);
+    let center_chunk_position = world_position_to_chunk_position(player_position);
     warn!("TODO");
     _ = ev_writer;
     _ = old_distance;

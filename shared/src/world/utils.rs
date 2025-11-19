@@ -1,6 +1,6 @@
 use bevy::math::{IVec3, Vec3};
 
-use crate::CHUNK_SIZE;
+use crate::{CHUNK_SIZE, HALF_CHUNK_SIZE};
 
 pub fn block_to_chunk_coord(x: i32) -> i32 {
     if x >= 0 {
@@ -26,8 +26,19 @@ pub fn world_position_to_chunk_position(v: Vec3) -> IVec3 {
     )
 }
 
-pub fn to_global_pos(chunk_pos: &IVec3, local_block_pos: &IVec3) -> IVec3 {
-    *chunk_pos * CHUNK_SIZE + *local_block_pos
+pub fn chunk_offset_to_global_pos(chunk_pos: &IVec3, local_block_offset: &IVec3) -> IVec3 {
+    *chunk_pos * CHUNK_SIZE + *local_block_offset
+}
+
+pub fn chunk_center_to_global_pos(chunk_pos: &IVec3) -> IVec3 {
+    chunk_offset_to_global_pos(
+        chunk_pos,
+        &IVec3 {
+            x: HALF_CHUNK_SIZE,
+            y: HALF_CHUNK_SIZE,
+            z: HALF_CHUNK_SIZE,
+        },
+    )
 }
 
 pub fn to_local_pos(global_block_pos: &IVec3) -> IVec3 {
@@ -54,7 +65,3 @@ pub const SIX_OFFSETS: [IVec3; 6] = [
     IVec3::new(0, 0, 1),
     IVec3::new(0, 0, -1),
 ];
-
-pub fn chunk_in_radius(player_pos: &IVec3, chunk_pos: &IVec3, radius: i32) -> bool {
-    (player_pos.x - chunk_pos.x).abs() <= radius && (player_pos.z - chunk_pos.z).abs() <= radius
-}
