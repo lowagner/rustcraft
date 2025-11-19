@@ -6,7 +6,7 @@ use crate::{
     KeyMap,
 };
 use bevy::prelude::*;
-use shared::world::{chunk_center_to_global_pos, world_position_to_chunk_position};
+use shared::world::world_position_to_chunk_position;
 use shared::CHUNK_SIZE;
 
 #[derive(Resource, Default, Reflect)]

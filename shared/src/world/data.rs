@@ -1,7 +1,8 @@
 use crate::messages::PlayerId;
 use crate::players::Player;
 use crate::world::{
-    block_to_chunk_coord, global_block_to_chunk_pos, to_local_pos, BlockHitbox, BlockId,
+    block_to_chunk_coord, global_block_to_chunk_pos, global_block_to_local_offset, BlockHitbox,
+    BlockId,
 };
 use crate::CHUNK_SIZE;
 
@@ -275,18 +276,13 @@ impl WorldMap for ServerChunkWorldMap {
         let kind: BlockData = *block;
 
         let chunk_pos: IVec3 = global_block_to_chunk_pos(global_block_pos);
-        let cx = chunk_pos.x;
-        let cy = chunk_pos.y;
-        let cz = chunk_pos.z;
 
-        let chunk_map: &mut ServerChunk =
-            self.map
-                .get_mut(&IVec3::new(chunk_pos.x, chunk_pos.y, chunk_pos.z))?;
+        let chunk_map: &mut ServerChunk = self.map.get_mut(&chunk_pos)?;
 
-        let local_block_pos: IVec3 = to_local_pos(global_block_pos);
-
-        chunk_map.map.remove(&local_block_pos);
-        self.chunks_to_update.push(IVec3::new(cx, cy, cz));
+        chunk_map
+            .map
+            .remove(&global_block_to_local_offset(global_block_pos));
+        self.chunks_to_update.push(chunk_pos);
 
         Some(kind)
     }

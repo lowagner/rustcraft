@@ -1,6 +1,6 @@
 use bevy::math::{IVec3, Vec3};
 
-use crate::{CHUNK_SIZE, HALF_CHUNK_SIZE};
+use crate::CHUNK_SIZE;
 
 pub fn block_to_chunk_coord(x: i32) -> i32 {
     if x >= 0 {
@@ -18,6 +18,7 @@ pub fn block_vec3_to_chunk_v3_coord(v: Vec3) -> Vec3 {
     )
 }
 
+// TODO: rename chunk_pos(ition) to chunk_index
 pub fn world_position_to_chunk_position(v: Vec3) -> IVec3 {
     IVec3::new(
         block_to_chunk_coord(v.x as i32),
@@ -30,18 +31,7 @@ pub fn chunk_offset_to_global_pos(chunk_pos: &IVec3, local_block_offset: &IVec3)
     *chunk_pos * CHUNK_SIZE + *local_block_offset
 }
 
-pub fn chunk_center_to_global_pos(chunk_pos: &IVec3) -> IVec3 {
-    chunk_offset_to_global_pos(
-        chunk_pos,
-        &IVec3 {
-            x: HALF_CHUNK_SIZE,
-            y: HALF_CHUNK_SIZE,
-            z: HALF_CHUNK_SIZE,
-        },
-    )
-}
-
-pub fn to_local_pos(global_block_pos: &IVec3) -> IVec3 {
+pub fn global_block_to_local_offset(global_block_pos: &IVec3) -> IVec3 {
     IVec3 {
         x: ((global_block_pos.x % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE,
         y: ((global_block_pos.y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE,
