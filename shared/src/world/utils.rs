@@ -31,6 +31,14 @@ pub fn chunk_offset_to_global_pos(chunk_pos: &IVec3, local_block_offset: &IVec3)
     *chunk_pos * CHUNK_SIZE + *local_block_offset
 }
 
+pub fn chunk_index_to_world_position(chunk_index: &IVec3) -> Vec3 {
+    Vec3 {
+        x: chunk_index.x as f32 * CHUNK_SIZE as f32,
+        y: chunk_index.y as f32 * CHUNK_SIZE as f32,
+        z: chunk_index.z as f32 * CHUNK_SIZE as f32,
+    }
+}
+
 pub fn global_block_to_local_offset(global_block_pos: &IVec3) -> IVec3 {
     IVec3 {
         x: ((global_block_pos.x % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE,

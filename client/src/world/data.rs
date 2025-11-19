@@ -8,7 +8,6 @@ use std::time::Instant;
 use bevy::math::IVec3;
 use bevy::prelude::Resource;
 use shared::world::{global_block_to_chunk_pos, global_block_to_local_offset};
-use shared::CHUNK_SIZE;
 use std::collections::HashMap;
 
 #[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]

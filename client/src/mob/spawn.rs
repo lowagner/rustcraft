@@ -30,7 +30,7 @@ pub fn spawn_mobs_system(
         }
 
         if event.mob.kind == shared::world::MobKind::Fox
-            && event.mob.position.distance(player_pos) < render_distance.distance as f32 * 5.0
+            && render_distance.close_enough(&event.mob.position, &player_pos)
         {
             info!("Spawning fox at {:?}", position);
             setup_fox(id, position, &mut commands, &asset_server, &mut graphs);
@@ -39,7 +39,7 @@ pub fn spawn_mobs_system(
 
     // Despawn entities which are too far away
     for (entity, _, transform) in mobs.iter() {
-        if transform.translation.distance(player_pos) > render_distance.distance as f32 * 5.0 {
+        if render_distance.too_far(&transform.translation, &player_pos) {
             commands.entity(entity).despawn();
         }
     }

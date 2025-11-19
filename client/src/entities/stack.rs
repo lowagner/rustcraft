@@ -2,7 +2,6 @@ use bevy::{prelude::*, render::mesh::VertexAttributeValues};
 use shared::{
     messages::ItemStackUpdateEvent,
     world::{ItemStack, ItemType},
-    CHUNK_SIZE,
 };
 
 use crate::{
@@ -89,9 +88,7 @@ pub fn stack_update_system(
     let player_position = player_transform.single().unwrap().translation;
 
     for (e, _, mut transform) in stacks.iter_mut() {
-        if player_position.distance(transform.translation)
-            > distance.distance as f32 * CHUNK_SIZE as f32
-        {
+        if distance.too_far(&player_position, &transform.translation) {
             commands.entity(e).despawn();
         } else {
             transform.rotate_local_y(1.0 * time.delta_secs());
