@@ -9,3 +9,6 @@ pub const HALF_BLOCK: Vec3 = Vec3 {
     y: 0.5,
     z: 0.5,
 };
+
+// increase render distance if we build the project in release mode
+pub const DEFAULT_RENDER_DISTANCE_CHUNKS: u32 = if cfg!(debug_assertions) { 2 } else { 4 };

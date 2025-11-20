@@ -1,33 +1,17 @@
 use crate::{
-    constants::DEFAULT_CHUNK_RENDER_DISTANCE_RADIUS,
     input::{data::GameAction, keyboard::is_action_just_pressed},
     player::CurrentPlayerMarker,
     world::WorldRenderRequestUpdateEvent,
     KeyMap,
 };
 use bevy::prelude::*;
-use shared::world::{chunk_index_to_world_position, world_position_to_chunk_position};
-use shared::CHUNK_SIZE;
+use shared::{
+    constants::DEFAULT_RENDER_DISTANCE_CHUNKS,
+    world::{chunk_index_to_world_position, world_position_to_chunk_position},
+    CHUNK_SIZE,
+};
 
-// TODO: implement Default using DEFAULT_CHUNK_RENDER_DISTANCE_RADIUS
-#[derive(Resource, Default, Reflect)]
-pub struct RenderDistance {
-    chunks: u32,
-}
-
-impl RenderDistance {
-    pub fn close_enough(&self, v1: &Vec3, v2: &Vec3) -> bool {
-        v1.distance(*v2) < self.distance()
-    }
-
-    pub fn too_far(&self, v1: &Vec3, v2: &Vec3) -> bool {
-        !self.close_enough(v1, v2)
-    }
-
-    fn distance(&self) -> f32 {
-        self.chunks as f32 * CHUNK_SIZE as f32
-    }
-}
+pub use shared::players::RenderDistance;
 
 pub fn render_distance_update_system(
     player_transform: Query<&Transform, With<CurrentPlayerMarker>>,
@@ -37,13 +21,13 @@ pub fn render_distance_update_system(
     key_map: Res<KeyMap>,
 ) {
     if render_distance.chunks == 0 {
-        render_distance.chunks = DEFAULT_CHUNK_RENDER_DISTANCE_RADIUS;
+        render_distance.chunks = DEFAULT_RENDER_DISTANCE_CHUNKS;
     }
 
     if is_action_just_pressed(GameAction::RenderDistanceMinus, &keyboard_input, &key_map) {
         render_distance.chunks = 1.max(render_distance.chunks - 1);
         info!("Reducing render distance to {}", render_distance.chunks);
-        // Far-away chunks will be despawned via `entities::stack::stack_update_system`.
+        // TODO: we actually need to despawn far away chunks, but probably should be done elsewhere.
     }
 
     if is_action_just_pressed(GameAction::RenderDistancePlus, &keyboard_input, &key_map) {

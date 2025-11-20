@@ -1,14 +1,16 @@
 use bevy::{
     math::Vec3,
+    prelude::*,
     prelude::{Component, Resource, Transform},
 };
 use bevy_platform::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    constants::DEFAULT_RENDER_DISTANCE_CHUNKS,
     messages::PlayerId,
     world::{ItemId, ItemStack, ItemType},
-    MAX_INVENTORY_SLOTS,
+    CHUNK_SIZE, MAX_INVENTORY_SLOTS,
 };
 
 #[derive(Debug, Resource, Clone, Serialize, Deserialize, PartialEq)]
@@ -190,5 +192,32 @@ impl ViewMode {
             ViewMode::FirstPerson => ViewMode::ThirdPerson,
             ViewMode::ThirdPerson => ViewMode::FirstPerson,
         };
+    }
+}
+
+#[derive(Resource, Reflect)]
+pub struct RenderDistance {
+    pub chunks: u32,
+}
+
+impl Default for RenderDistance {
+    fn default() -> Self {
+        Self {
+            chunks: DEFAULT_RENDER_DISTANCE_CHUNKS,
+        }
+    }
+}
+
+impl RenderDistance {
+    pub fn close_enough(&self, v1: &Vec3, v2: &Vec3) -> bool {
+        v1.distance(*v2) < self.distance()
+    }
+
+    pub fn too_far(&self, v1: &Vec3, v2: &Vec3) -> bool {
+        !self.close_enough(v1, v2)
+    }
+
+    pub fn distance(&self) -> f32 {
+        self.chunks as f32 * CHUNK_SIZE as f32
     }
 }
